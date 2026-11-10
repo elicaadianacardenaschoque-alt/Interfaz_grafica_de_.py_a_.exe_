@@ -1,0 +1,156 @@
+import os
+import subprocess
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+
+def seleccionar_archivo():
+  archivo = filedialog.askopenfilename(
+      title="Selecciona tu archivo Python",
+      filetypes=[("Archivos Python", "*.py"), ("Todos los archivos", "*.*")],
+  )
+  if archivo:
+    entry_ruta.delete(0, tk.END)
+    entry_ruta.insert(0, archivo)
+
+
+def seleccionar_icono():
+  archivo = filedialog.askopenfilename(
+      title="Selecciona el icono",
+      filetypes=[("Archivos de Icono", "*.ico"), ("Todos los archivos", "*.*")],
+  )
+  if archivo:
+    entry_icono.delete(0, tk.END)
+    entry_icono.insert(0, archivo)
+
+
+def seleccionar_salida():
+  carpeta = filedialog.askdirectory(title="Selecciona la carpeta de destino")
+  if carpeta:
+    entry_salida.delete(0, tk.END)
+    entry_salida.insert(0, carpeta)
+
+
+def convertir_a_exe():
+  ruta_script = entry_ruta.get()
+  if not ruta_script or not os.path.exists(ruta_script):
+    messagebox.showerror("Error", "Por favor selecciona un archivo .py válido.")
+    return
+
+  # Comando base de PyInstaller
+  comando = ["pyinstaller", "--onefile"]
+
+  # 1. Opción: Ocultar consola
+  if var_noconsole.get():
+    comando.append("--noconsole")
+
+  # 2. Opción: Icono personalizado
+  ruta_icono = entry_icono.get()
+  if ruta_icono and os.path.exists(ruta_icono):
+    comando.append(f"--icon={ruta_icono}")
+
+  # 3. Opción: Carpeta de salida personalizada
+  ruta_salida = entry_salida.get()
+  if ruta_salida and os.path.exists(ruta_salida):
+    comando.append(f"--distpath={ruta_salida}")
+
+  # Añadir el script principal al final del comando
+  comando.append(ruta_script)
+
+  try:
+    proceso = subprocess.run(
+        comando, capture_output=True, text=True, check=True
+    )
+    mensaje = (
+        "¡El archivo se ha convertido a .exe correctamente!\nRevisa tu carpeta"
+        " de destino."
+    )
+    if ruta_salida:
+      mensaje += f"\nDestino: {ruta_salida}"
+    messagebox.showinfo("¡Éxito!", mensaje)
+  except subprocess.CalledProcessError as e:
+    messagebox.showerror(
+        "Error de compilación", f"Ocurrió un error:\n{e.stderr}"
+    )
+  except FileNotFoundError:
+    messagebox.showerror(
+        "PyInstaller no encontrado",
+        "Asegúrate de tener instalado PyInstaller (pip install pyinstaller).",
+    )
+
+
+# Configuración de la interfaz gráfica principal
+root = tk.Tk()
+root.title("Conversor Avanzado de .py a .exe")
+root.geometry("520x420")
+root.resizable(False, False)
+
+# --- 1. Selección de archivo .py ---
+lbl_archivo = tk.Label(
+    root, text="Archivo Python (.py):", font=("Arial", 10, "bold")
+)
+lbl_archivo.pack(anchor="w", padx=20, pady=(15, 5))
+
+frame_input = tk.Frame(root)
+frame_input.pack(fill="x", padx=20)
+entry_ruta = tk.Entry(frame_input, width=45, font=("Arial", 10))
+entry_ruta.pack(side=tk.LEFT, padx=(0, 5))
+btn_examinar = tk.Button(
+    frame_input, text="Examinar", command=seleccionar_archivo
+)
+btn_examinar.pack(side=tk.LEFT)
+
+# --- 2. Selección de Icono (.ico) ---
+lbl_icono = tk.Label(
+    root, text="Icono personalizado (.ico) [Opcional]:", font=("Arial", 10)
+)
+lbl_icono.pack(anchor="w", padx=20, pady=(10, 5))
+
+frame_icono = tk.Frame(root)
+frame_icono.pack(fill="x", padx=20)
+entry_icono = tk.Entry(frame_icono, width=45, font=("Arial", 10))
+entry_icono.pack(side=tk.LEFT, padx=(0, 5))
+btn_icon_browse = tk.Button(
+    frame_icono, text="Examinar", command=seleccionar_icono
+)
+btn_icon_browse.pack(side=tk.LEFT)
+
+# --- 3. Carpeta de Salida ---
+lbl_salida = tk.Label(
+    root, text="Carpeta de destino [Opcional]:", font=("Arial", 10)
+)
+lbl_salida.pack(anchor="w", padx=20, pady=(10, 5))
+
+frame_salida = tk.Frame(root)
+frame_salida.pack(fill="x", padx=20)
+entry_salida = tk.Entry(frame_salida, width=45, font=("Arial", 10))
+entry_salida.pack(side=tk.LEFT, padx=(0, 5))
+btn_salida_browse = tk.Button(
+    frame_salida, text="Examinar", command=seleccionar_salida
+)
+btn_salida_browse.pack(side=tk.LEFT)
+
+# --- 4. Casilla para ocultar consola ---
+var_noconsole = tk.BooleanVar()
+chk_noconsole = tk.Checkbutton(
+    root,
+    text="Ocultar ventana de consola (--noconsole)",
+    variable=var_noconsole,
+    font=("Arial", 10),
+)
+chk_noconsole.pack(anchor="w", padx=20, pady=(15, 10))
+
+# Botón de conversión principal
+btn_convertir = tk.Button(
+    root,
+    text="Convertir a .EXE",
+    command=convertir_a_exe,
+    bg="#4CAF50",
+    fg="white",
+    font=("Arial", 11, "bold"),
+    padx=15,
+    pady=8,
+)
+btn_convertir.pack(pady=10)
+
+root.mainloop()
